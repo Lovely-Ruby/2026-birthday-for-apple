@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Heart, 
   Sparkles, 
@@ -9,99 +9,8 @@ import {
 import confetti from 'canvas-confetti';
 
 // ==========================================
-// 1. MUSIC & SOUND SYNTHESIS (Web Audio API)
+// 1. WIND SOUND SYNTHESIS (Web Audio API)
 // ==========================================
-
-class MusicBox {
-  private ctx: AudioContext | null = null;
-  private isPlaying = false;
-  private timeoutId: any = null;
-
-  // Happy Birthday melody in C/G Major
-  private melody = [
-    { note: "G4", dur: 0.5 }, { note: "G4", dur: 0.5 }, { note: "A4", dur: 1.0 }, { note: "G4", dur: 1.0 }, { note: "C5", dur: 1.0 }, { note: "B4", dur: 2.0 },
-    { note: "G4", dur: 0.5 }, { note: "G4", dur: 0.5 }, { note: "A4", dur: 1.0 }, { note: "G4", dur: 1.0 }, { note: "D5", dur: 1.0 }, { note: "C5", dur: 2.0 },
-    { note: "G4", dur: 0.5 }, { note: "G4", dur: 0.5 }, { note: "G5", dur: 1.0 }, { note: "E5", dur: 1.0 }, { note: "C5", dur: 1.0 }, { note: "B4", dur: 1.0 }, { note: "A4", dur: 2.0 },
-    { note: "F5", dur: 0.5 }, { note: "F5", dur: 0.5 }, { note: "E5", dur: 1.0 }, { note: "C5", dur: 1.0 }, { note: "D5", dur: 1.0 }, { note: "C5", dur: 2.0 }
-  ];
-
-  private noteFreqs: { [key: string]: number } = {
-    "G4": 392.00, "A4": 440.00, "B4": 493.88, "C5": 523.25, "D5": 587.33, "E5": 659.25, "F5": 698.46, "G5": 783.99
-  };
-
-  private playNote(frequency: number, startTime: number, duration: number) {
-    if (!this.ctx) return;
-    
-    // Create oscillator and gain node for a music box sound (chime-like)
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(frequency, startTime);
-    
-    // Music box envelope: fast attack, slow decay/release
-    gain.gain.setValueAtTime(0, startTime);
-    gain.gain.linearRampToValueAtTime(0.25, startTime + 0.02); // attack
-    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration); // decay
-    
-    // Subtle lowpass filter to make the synth sound more cozy/magical
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(1500, startTime);
-    
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.ctx.destination);
-    
-    osc.start(startTime);
-    osc.stop(startTime + duration);
-  }
-
-  public start() {
-    if (this.isPlaying) return;
-    try {
-      this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-      this.isPlaying = true;
-      
-      let time = this.ctx.currentTime + 0.1;
-      let cursor = 0;
-      
-      const scheduleMelody = () => {
-        if (!this.isPlaying || !this.ctx) return;
-        
-        while (cursor < this.melody.length && time < this.ctx.currentTime + 1.5) {
-          const item = this.melody[cursor];
-          const freq = this.noteFreqs[item.note];
-          const dur = item.dur * 0.7; // tempo speed multiplier
-          
-          this.playNote(freq, time, dur);
-          time += item.dur * 0.75; // note interval spacing
-          cursor++;
-        }
-        
-        if (cursor >= this.melody.length) {
-          cursor = 0;
-          time += 1.2; // brief pause before looping melody again
-        }
-        
-        this.timeoutId = setTimeout(scheduleMelody, 300);
-      };
-      
-      scheduleMelody();
-    } catch (e) {
-      console.error("Music box initialization failed:", e);
-    }
-  }
-
-  public stop() {
-    this.isPlaying = false;
-    if (this.timeoutId) clearTimeout(this.timeoutId);
-    if (this.ctx) {
-      this.ctx.close();
-      this.ctx = null;
-    }
-  }
-}
 
 // Synthesize a puff of wind noise for candle blowing
 const playBlowSound = () => {
@@ -175,8 +84,20 @@ export default function App() {
   const [wishSubmitted, setWishSubmitted] = useState(false);
   const [lanterns, setLanterns] = useState<{ id: number; drift: number }[]>([]);
   
-  // Music Instance Ref
-  const musicRef = useRef<MusicBox>(new MusicBox());
+  // MP3 Audio Player Ref
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Initialize audio object once
+  useEffect(() => {
+    audioRef.current = new Audio('./birthday-song.mp3');
+    audioRef.current.loop = true;
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+    };
+  }, []);
 
   // Generate 20 floating background particles with random delays and paths
   const [particles] = useState(() => 
@@ -197,12 +118,14 @@ export default function App() {
   // ==========================================
 
   const toggleMusic = () => {
+    if (!audioRef.current) return;
     if (isMusicPlaying) {
-      musicRef.current.stop();
+      audioRef.current.pause();
       setIsMusicPlaying(false);
     } else {
-      musicRef.current.start();
-      setIsMusicPlaying(true);
+      audioRef.current.play()
+        .then(() => setIsMusicPlaying(true))
+        .catch(err => console.log("Play failed:", err));
     }
   };
 
@@ -238,10 +161,6 @@ export default function App() {
           origin: { x: 1 }
         });
       }, 400);
-
-      // Start music automatically
-      musicRef.current.start();
-      setIsMusicPlaying(true);
     }, 700);
   };
 
@@ -249,6 +168,13 @@ export default function App() {
   const handleEnterLetter = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsOpened(true);
+    
+    // Play MP3 when the letter is opened/expanded
+    if (audioRef.current) {
+      audioRef.current.play()
+        .then(() => setIsMusicPlaying(true))
+        .catch(err => console.error("Auto playback failed:", err));
+    }
   };
 
   // Blow candles out
