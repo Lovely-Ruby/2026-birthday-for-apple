@@ -288,7 +288,7 @@ export default function App() {
             A. ENVELOPE INTRO SCREEN (Step 1)
             ========================================== */}
         {!isOpened && (
-          <div className="envelope-screen bg-[#0b081a] relative">
+          <div className="envelope-screen relative">
             <h2 className="font-cursive text-4xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-yellow-200 to-cyan-300 font-bold mb-8 tracking-wider">
               {TARGET_NAME} 亲启
             </h2>
@@ -339,11 +339,11 @@ export default function App() {
           <div className="flex-1 flex flex-col justify-between relative z-3 overflow-hidden">
             
             {/* Scrollable Screen Content */}
-            <div className="flex-1 overflow-y-auto no-scrollbar p-6 flex flex-col justify-center items-center">
+            <div className="flex-1 overflow-y-auto no-scrollbar p-6 flex flex-col justify-start items-center">
               
               {/* STEP 2: SHOW THE LOVE LETTER CARD */}
               {currentStep === 'letter' && (
-                <div className="w-full max-w-sm glass-card animate-shine animate-fade-in">
+                <div className="w-full max-w-sm glass-card my-auto animate-shine animate-fade-in">
                   <div className="flex justify-center">
                     <Heart className="w-12 h-12 cake-icon-glow" fill="currentColor" />
                   </div>
@@ -377,7 +377,7 @@ export default function App() {
 
               {/* STEP 3: SHOW THE INTERACTIVE BIRTHDAY CAKE */}
               {currentStep === 'cake' && (
-                <div className="w-full flex flex-col items-center animate-fade-in relative">
+                <div className="w-full flex-1 flex flex-col justify-center items-center animate-fade-in relative">
                   
                   {/* Floating Wish Lanterns in background */}
                   <div className="wish-lantern-sky">
@@ -393,7 +393,7 @@ export default function App() {
                     ))}
                   </div>
 
-                  <h2 className="font-cursive text-3xl text-yellow-300 font-bold mb-8 text-center drop-shadow-md">
+                  <h2 className="font-cursive text-3xl text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 font-bold mb-8 text-center drop-shadow-sm">
                     吹灭蜡烛许个愿
                   </h2>
 
@@ -475,7 +475,7 @@ export default function App() {
                       {/* Wish Input Panel */}
                       {showWishPanel && !wishSubmitted && (
                         <form onSubmit={handleSubmitWish} className="wish-input-panel w-full max-w-sm px-4">
-                          <div className="text-yellow-400 font-semibold mb-3 text-center text-sm tracking-wide">
+                          <div className="text-pink-600 font-semibold mb-3 text-center text-sm tracking-wide">
                             ✨ 蜡烛吹灭啦！写下你的心愿吧 ✨
                           </div>
                           <textarea
@@ -497,17 +497,17 @@ export default function App() {
 
                       {/* Wish Submitted Success View */}
                       {wishSubmitted && (
-                        <div className="text-center p-4 bg-white/5 border border-white/10 rounded-2xl w-full max-w-sm animate-shine">
+                        <div className="text-center p-4 bg-white/85 border border-pink-100 rounded-2xl w-full max-w-sm shadow-lg shadow-pink-100/50 animate-shine">
                           <Heart className="w-8 h-8 text-pink-500 mx-auto mb-2 animate-pulse" fill="currentColor" />
-                          <div className="text-pink-300 font-bold mb-1 text-base">愿望天灯已发射！</div>
-                          <p className="text-xs text-gray-300/80 leading-relaxed px-2">
+                          <div className="text-pink-600 font-bold mb-1 text-base">愿望天灯已发射！</div>
+                          <p className="text-xs text-purple-950 leading-relaxed px-2">
                             “萍，你的愿望已经飞入浩瀚星空。愿新的一岁，你所有的梦想都成真，岁岁常欢愉，万事皆顺意 ❤️”
                           </p>
                           <button
                             onClick={handleReWish}
-                            className="mt-4 text-xs text-yellow-300 underline underline-offset-4 flex items-center justify-center gap-1 mx-auto"
+                            className="mt-4 text-xs text-pink-600 font-semibold underline underline-offset-4 flex items-center justify-center gap-1 mx-auto"
                           >
-                            <RotateCcw className="w-3.5 h-3.5" />
+                            <RotateCcw className="w-4 h-4" />
                             <span>重新许个愿</span>
                           </button>
                         </div>
