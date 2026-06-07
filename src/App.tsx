@@ -16,6 +16,9 @@ import confetti from 'canvas-confetti';
 const playBlowSound = () => {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
     const bufferSize = ctx.sampleRate * 0.4; // 0.4 seconds
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -42,9 +45,100 @@ const playBlowSound = () => {
     gain.connect(ctx.destination);
     
     noise.start();
-    setTimeout(() => ctx.close(), 600);
+    setTimeout(() => {
+      try {
+        ctx.close();
+      } catch (err) {}
+    }, 600);
   } catch (e) {
     console.error("Blow sound synthesis failed:", e);
+  }
+};
+
+// Synthesize a quick click pop sound immediately when seal is clicked
+const playUnsealSound = (ctx: AudioContext) => {
+  try {
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(250, now);
+    osc.frequency.exponentialRampToValueAtTime(500, now + 0.06); // sweep up
+    osc.frequency.exponentialRampToValueAtTime(300, now + 0.12); // sweep down
+    
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(0.25, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.start(now);
+    osc.stop(now + 0.18);
+  } catch (e) {
+    console.error("Unseal sound failed:", e);
+  }
+};
+
+// Synthesize a magical glissando arpeggio when the card pops up
+const playPopSound = (ctx: AudioContext, delay = 0.35) => {
+  try {
+    const now = ctx.currentTime + delay;
+    // Magical upward sweeping major scale chord notes (C5, E5, G5, C6, E6, G6, C7)
+    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51, 1567.98, 2093.00]; 
+    
+    notes.forEach((freq, idx) => {
+      const time = now + idx * 0.05; // 50ms delay between notes
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine'; // pure crystal clear sound
+      osc.frequency.setValueAtTime(freq, time);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.01, time + 0.04);
+      
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(0.18, time + 0.02); // rapid attack
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.3); // decay
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(time);
+      osc.stop(time + 0.35);
+    });
+  } catch (e) {
+    console.error("Pop sound synthesis failed:", e);
+  }
+};
+
+// Synthesize a warm, romantic chime arpeggio when opening the letter card
+const playLetterOpenSound = (ctx: AudioContext) => {
+  try {
+    const now = ctx.currentTime;
+    // Romantic arpeggio (F5, A5, C6, F6)
+    const notes = [698.46, 880.00, 1046.50, 1396.91];
+    
+    notes.forEach((freq, idx) => {
+      const time = now + idx * 0.08;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, time);
+      
+      gain.gain.setValueAtTime(0, time);
+      gain.gain.linearRampToValueAtTime(0.15, time + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.45);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(time);
+      osc.stop(time + 0.5);
+    });
+  } catch (e) {
+    console.error("Letter open sound failed:", e);
   }
 };
 
@@ -103,7 +197,7 @@ export default function App() {
   const [particles] = useState(() => 
     Array.from({ length: 20 }, (_, idx) => ({
       id: idx,
-      type: idx % 3 === 0 ? 'heart' : idx % 3 === 1 ? 'star' : 'bubble',
+      type: idx % 4 === 0 ? 'heart' : idx % 4 === 1 ? 'star' : idx % 4 === 2 ? 'petal' : 'bubble',
       size: Math.random() * 16 + 10,
       left: Math.random() * 95,
       delay: Math.random() * 10,
@@ -133,7 +227,31 @@ export default function App() {
   const handleOpenEnvelope = () => {
     if (envelopeClass.includes('open')) return;
     
+    // Create AudioContext inside the user interaction event loop
+    let audioCtx: AudioContext | null = null;
+    try {
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    
     setEnvelopeClass('open');
+    
+    // Play physical clicking sound immediately and schedule the pop-up sound 0.35s later
+    if (audioCtx) {
+      playUnsealSound(audioCtx);
+      playPopSound(audioCtx, 0.35);
+      
+      const ctxToClose = audioCtx;
+      setTimeout(() => {
+        try {
+          ctxToClose.close();
+        } catch (err) {}
+      }, 1500);
+    }
     
     setTimeout(() => {
       // Fire confetti burst!
@@ -167,6 +285,23 @@ export default function App() {
   // Transition to love letter screen
   const handleEnterLetter = (e: React.MouseEvent) => {
     e.stopPropagation();
+    
+    // Play sweet chime sound when transition starts
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      playLetterOpenSound(audioCtx);
+      setTimeout(() => {
+        try {
+          audioCtx.close();
+        } catch (err) {}
+      }, 1500);
+    } catch (err) {
+      console.error("Failed to play letter open sound:", err);
+    }
+    
     setIsOpened(true);
     
     // Play MP3 when the letter is opened/expanded
@@ -266,6 +401,12 @@ export default function App() {
               return <Heart key={p.id} className="particle-heart animate-float-heart" style={style} fill="currentColor" />;
             } else if (p.type === 'star') {
               return <Sparkles key={p.id} className="particle-star animate-float-star" style={style} />;
+            } else if (p.type === 'petal') {
+              return (
+                <svg key={p.id} className="particle-petal" style={style} viewBox="0 0 30 30" fill="currentColor">
+                  <path d="M15,5 C10,5 5,10 5,15 C5,25 15,25 15,25 C15,25 25,25 25,15 C25,10 20,5 15,5 Z" />
+                </svg>
+              );
             }
             return <div key={p.id} className="particle animate-float-particle" style={style} />;
           })}
@@ -289,7 +430,16 @@ export default function App() {
             ========================================== */}
         {!isOpened && (
           <div className="envelope-screen relative">
-            <h2 className="font-cursive text-4xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-yellow-200 to-cyan-300 font-bold mb-8 tracking-wider">
+            {/* Spinning decorative background orbits */}
+            {!envelopeClass.includes('open') && (
+              <div className="absolute w-[460px] h-[460px] border border-pink-200/20 rounded-full animate-[spin_60s_linear_infinite] pointer-events-none z-0 flex items-center justify-center">
+                <div className="w-[380px] h-[380px] border border-dashed border-pink-200/30 rounded-full flex items-center justify-center">
+                  <div className="w-[280px] h-[280px] border border-pink-200/10 rounded-full" />
+                </div>
+              </div>
+            )}
+
+            <h2 className={`font-cursive text-4xl text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-pink-600 to-purple-800 font-bold mb-8 tracking-wider drop-shadow-sm z-10 transition-all duration-500 ${envelopeClass.includes('open') ? 'opacity-0 scale-95 -translate-y-4 pointer-events-none' : 'opacity-100 scale-100'}`}>
               {TARGET_NAME} 亲启
             </h2>
 
@@ -298,6 +448,12 @@ export default function App() {
               className={`envelope-wrapper ${envelopeClass}`}
               onClick={handleOpenEnvelope}
             >
+
+              {/* Glowing Aura behind envelope */}
+              {!envelopeClass.includes('open') && (
+                <div className="envelope-aura absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px]" />
+              )}
+
               {/* Seal Sticker */}
               <div className="heart-seal animate-heartbeat">
                 <Heart className="w-5 h-5 fill-current" />
