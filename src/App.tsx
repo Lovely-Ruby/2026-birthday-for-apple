@@ -152,12 +152,9 @@ const BLESSING_TITLE = "祝我最亲爱的萍生日快乐！";
 const BLESSING_CONTENT = `致亲爱的萍：
 
 祝宝子萍生日快乐呀！✨
-
 陪你度过的第5个生日! 
-
 又是一年里最特别的一天，愿你新的一岁依然温柔、快乐、被爱包围。
 感谢你来到我的生命里，让每一个平凡的日子都变得闪闪发光。
-
 愿你眼里永远有笑意，心底永远有温暖。
 无论未来的日子是晴是雨，我都想陪你一起度过，把以后的每一个生日都变成我们美好的回忆。
 
@@ -516,7 +513,7 @@ export default function App() {
                   </div>
 
                   <div className="blessing-signature mt-4">
-                    —— 爱你的我 ✨
+                    —— 爱你的小王 ✨
                   </div>
 
                   {/* Glowing action button to enter Cake step */}
