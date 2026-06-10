@@ -148,10 +148,12 @@ const playLetterOpenSound = (ctx: AudioContext) => {
 // ==========================================
 
 const TARGET_NAME = "萍";
-const BLESSING_TITLE = "祝我最亲爱的你生日快乐！";
+const BLESSING_TITLE = "祝我最亲爱的萍生日快乐！";
 const BLESSING_CONTENT = `致亲爱的萍：
 
-祝你生日快乐呀！✨
+祝宝子萍生日快乐呀！✨
+
+陪你度过的第5个生日! 
 
 又是一年里最特别的一天，愿你新的一岁依然温柔、快乐、被爱包围。
 感谢你来到我的生命里，让每一个平凡的日子都变得闪闪发光。
